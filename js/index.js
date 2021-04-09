@@ -1,6 +1,7 @@
 
 var tourismJobTypePercentByRegion = {}
 var allRegions = []
+var jobTourismInfoByRegion = {}
 var jobTouristicPercentByRegion = []
 var tourimPercentEconomicByRegion = []
 var tourismPercentByRegion = []
@@ -58,10 +59,12 @@ function init() {
             ]
 
             let regionName = val.name
+            let postalCode = val.postal_code
             allRegions.push(regionName)
             jobTouristicPercentByRegion.push(val.job_touristic_percent)
             tourimPercentEconomicByRegion.push(val.tourim_percent_economic)
             tourismPercentByRegion.push(val.tourism_percent)
+            jobTourismInfoByRegion[postalCode] = val
             tourismJobTypePercentByRegion[regionName] = [jobType, jobTypeInPercent]
         });
 
@@ -127,6 +130,9 @@ function init() {
         showLineChartNightStayAndHotelRatioByRegion()
         showAllRegions()
     });
+
+
+    setUpMapView()
 }
 
 
@@ -147,13 +153,13 @@ function showAllRegions() {
     for (const ele of eleRegions) {
         ele.addEventListener('click', (e) => {
             e.preventDefault();
-            
+
             let regionName = e.target.innerText
             console.log(regionName)
             showLineChartNightStayAndHotelRatioByRegion(regionName)
         })
     }
-   
+
 }
 
 
@@ -197,7 +203,7 @@ function showPieChartTourismPercentByRegion() {
 function showLineChartNightStayAndHotelRatioByRegion(data) {
 
     let regionName = "Drome";
-    if(data)  { 
+    if (data) {
         regionName = data
     }
 
@@ -209,7 +215,7 @@ function showLineChartNightStayAndHotelRatioByRegion(data) {
 
     let element = document.querySelector("#chart-5")
     element.innerHTML = ""
-    
+
     var optionsCC = {
         series: [{
             name: 'Hotel Data',
@@ -256,4 +262,80 @@ function showLineChartNightStayAndHotelRatioByRegion(data) {
 }
 
 
+function setUpMapView() {
+    var contourcommune;
+    var macarte = L.map('carte', {
+        zoomControl: false,
+    }).setView([45.7640, 4.8357], 7);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(macarte);
+
+    $.getJSON("json/geojson/departements-et-collectivites-doutre-mer-france.geojson", function (data) {
+        contourcommune = L.geoJson(data, {
+            style: function (feature) {
+                return {
+                    fillColor: "#EE5157",
+                    weight: 1,
+                    color: 'black',
+                    fillOpacity: 0.5
+                };
+            },
+            onEachFeature(feature, layer) {
+                
+                onClickShowRegionInfo(feature, layer)
+                
+            }
+
+        }).addTo(macarte)
+    })
+
+    function onClickShowRegionInfo(feature, layer) {
+        layer.on("click", function () {
+
+            let postalCode = feature.properties.dep_code
+            let regionInfo = jobTourismInfoByRegion[postalCode]
+            regionInfo && regionInfo
+            let name = regionInfo && regionInfo.name
+            let postal_code = regionInfo && regionInfo.postal_code
+            let job_touristic = regionInfo && regionInfo.job_touristic
+            let job_touristic_percent = regionInfo && regionInfo.job_touristic_percent
+            let tourism_percent = regionInfo && regionInfo.tourism_percent
+            let tourim_percent_economic = regionInfo && regionInfo.tourim_percent_economic
+            let accomodation = regionInfo && regionInfo.accomodation
+            let restauration = regionInfo && regionInfo.restauration
+            let sport_loisir = regionInfo && regionInfo.sport_loisir
+            let commerces_artisanat = regionInfo && regionInfo.commerces_artisanat
+            let patrimoine_culture = regionInfo && regionInfo.patrimoine_culture
+            let soins = regionInfo && regionInfo.soins
+            let other = regionInfo && regionInfo.other
+    
+            let htmlStr = `
+                <li>Postal Code : ${postal_code}</li>
+                <li>Job Touristic : ${job_touristic}</li>
+                <li>Job Touristic Percent : ${job_touristic_percent}</li>
+                <li>Tourism Percent : ${tourism_percent}</li>
+                <li>Tourim Percent_economic : ${tourim_percent_economic}</li>
+                <li>Accomodation : ${accomodation}</li>
+                <li>Restauration : ${restauration}</li>
+                <li>Sport Loisir : ${sport_loisir}</li>
+                <li>Commerces Artisanat : ${commerces_artisanat}</li>
+                <li>Patrimoine Culture : ${patrimoine_culture}</li>
+                <li>Soins : ${soins}</li>
+                <li>Other : ${other}</li>`
+    
+            let eleRegionInfo = document.getElementById("region-info")
+            eleRegionInfo.innerHTML = htmlStr
+
+            let eleRegionName = document.getElementById("region-name")
+            eleRegionName.innerHTML = name
+        })
+    }
+
+}
+
+
 init()
+
+

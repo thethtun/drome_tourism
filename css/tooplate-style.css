@@ -299,7 +299,7 @@ select.tm-select::-ms-expand { display: none; }
 	-webkit-box-shadow: 0px 0px 7px 0px rgba(214,214,214,1);
 	-moz-box-shadow: 0px 0px 7px 0px rgba(214,214,214,1);
 	box-shadow: 0px 0px 7px 0px rgba(214,214,214,1);
-	transform: scale(1.1);
+	/* transform: scale(1.1); */
 }
 
 .tm-article-title-1 {

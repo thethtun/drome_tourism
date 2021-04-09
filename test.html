@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>carte leaflet</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+    <link rel="stylesheet" href="css/leaflet.css" />
+    <link rel="stylesheet" href="css/bootstrap.min.css" />
+    <!-- <link rel="stylesheet" href="css/leaflet.awesome-markers.css" /> -->
+    <!-- <link rel="stylesheet" href="css/style.css" /> -->
+    <script src="js/jquery-1.11.3.min.js"></script>
+    <script src="js/leaflet.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+</head>
+
+<body>
+
+    <div id="carte" style="height:500px"></div>
+    <div id="chart" class="graphique"></div>
+    <script>
+        var contourcommune
+        var macarte = L.map('carte').setView([42.940024965823895, 1.5654835632700217], 9);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(macarte);
+        var sommehabitant = 0
+        var moyennehabitant = 0
+
+
+
+        function choisicouleur(couleur) {
+            return couleur > 9500 ? '#800026' :
+                couleur > 2000 ? '#BD0026' :
+                couleur > 1500 ? '#E31A1C' :
+                couleur > 1000 ? '#FC4E2A' :
+                couleur > 200 ? '#FD8D3C' :
+                '#FFEDA0';
+        }
+
+        function choisicouleur2(couleur) {
+            return couleur > 9500 ? '#800026' :
+                couleur > 1200 ? '#BD0026' :
+                couleur > 1000 ? '#E31A1C' :
+                couleur > 800 ? '#FC4E2A' :
+                couleur > 600 ? '#FD8D3C' :
+                '#FFEDA0';
+        }
+
+
+
+
+
+        $.getJSON("json/geojson/departements-et-collectivites-doutre-mer-france.geojson", function (data) {
+            for (var i = 0; i < data.features.length; i++) {
+                sommehabitant += data.features[i].properties.year
+            }
+            moyennehabitant = sommehabitant / data.features.length
+            //console.log(moyennehabitant)
+            contourcommune = L.geoJson(data, {
+                style: function (feature) {
+                    return {
+                        fillColor: choisicouleur2(feature.properties.year),
+                        weight: 1,
+                        color: 'black',
+                        fillOpacity: 0.5
+                    };
+                },
+                onEachFeature(feature, layer) {
+                    donnees(feature, layer)
+
+                }
+
+            }).addTo(macarte)
+        })
+
+
+        var population = []
+
+        function donnees(feature, layer) {
+            population.push(feature.properties.year)
+            layer.on("click", function () {
+                $(".graphique").css("display", "block")
+                $("#chart").empty()
+                var legendenom = "population de " + feature.properties.nom_com
+                var titre = "comparaison de la population de " + feature.properties.nom_com +
+                    " avec la moyenne de l'Ariège"
+                var options = {
+                    chart: {
+                        type: 'bar'
+                    },
+                    series: [{
+                        name: 'population',
+                        data: [feature.properties.year, parseInt(moyennehabitant)]
+                    }],
+                    xaxis: {
+                        categories: [legendenom, "population moyenne de l'Ariège"]
+                    },
+                    title: {
+                        text: titre,
+                        align: 'left',
+                        margin: 10,
+                        offsetX: 0,
+                        offsetY: 0,
+                        floating: false,
+                        style: {
+                            fontSize: '10px',
+                            fontWeight: 'bold',
+                            fontFamily: undefined,
+                            color: '#263238'
+                        },
+                    }
+                }
+
+                var chart = new ApexCharts(document.querySelector("#chart"), options);
+
+                chart.render();
+
+            })
+        }
+    </script>
+</body>
+
+</html>
